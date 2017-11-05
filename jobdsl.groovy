@@ -12,19 +12,19 @@ dir.eachFileRecurse(FileType.FILES) { file ->
 }
 list.each {
     def jobname = it.getName().replaceFirst(~/\.[^\.]+$/, '') // less .ext
-    String pathInRepo = new File(new File(__FILE__).parent).toPath().relativize(it.toPath()).toString()
+    String pathInRepo = new File(new File(__FILE__).parent).toPath().relativize(it.toPath()).toString().replaceAll("\\\\", "/")
     def pos = pathInRepo.lastIndexOf("/")
-    def jobFolder = pathInRepo.substring(0, pos).replaceFirst(~/pipelines\//, '')
-    //def jobFolder = it.getParentFile().getAbsolutePath().replaceFirst(~/.+pipelines\//, '') // jenkins-folders
-    if (jobFolder != "") {
-        if (jobFolder.contains("/")) {
-            def folders = jobFolder.split('/')
-        } else {
-            folder(jobFolder)
-        }
+    def jobFolder = ""
+    if (pos != -1) {
+        jobFolder = pathInRepo.substring(0, pos).replaceFirst(~/pipelines\//, '')
+    }
+//    def jobFolder = it.getParentFile().getAbsolutePath().replaceAll("\\\\", "/").replaceFirst(~/.+pipelines\//, '') // jenkins-folders
+    splitter(jobFolder).each {
+        if (it != "pipelines")
+            folder(it)
     }
     String jobNameWithFolder
-    if (jobFolder == "") {
+    if (jobFolder == "pipelines") {
         jobNameWithFolder = jobname
     } else {
         jobNameWithFolder = jobFolder + "/" + jobname
@@ -53,3 +53,16 @@ list.each {
     }
 }
 
+static List<String> splitter(String folder) {
+    List<String> ret = new ArrayList<>()
+    int lastIndex = 0
+    while (lastIndex < folder.length()) {
+        int currentIndex = folder.indexOf("/", lastIndex + 1)
+        if (currentIndex == -1) {
+            currentIndex = folder.length()
+        }
+        ret.add(folder.substring(0, currentIndex))
+        lastIndex = currentIndex
+    }
+    return ret
+}
