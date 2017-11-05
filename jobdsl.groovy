@@ -1,30 +1,31 @@
 import groovy.io.FileType
 
+def rootFolder = "pipelines"
+
 def gitrepo = "git@gitrepo:dir/repo.git"
 
 def list = []
 
-def dir = new File(new File(__FILE__).parent + "/pipelines/")
+def dir = new File(new File(__FILE__).parent + "/" + rootFolder + "/")
 
 dir.eachFileRecurse(FileType.FILES) { file ->
     out.println file.canonicalPath
     list << file
 }
 list.each {
-    def jobname = it.getName().replaceFirst(~/\.[^\.]+$/, '') // less .ext
+    def jobname = it.getName().replaceFirst(~/ \.[^ \.] + $/, '') // less .ext
     String pathInRepo = new File(new File(__FILE__).parent).toPath().relativize(it.toPath()).toString().replaceAll("\\\\", "/")
     def pos = pathInRepo.lastIndexOf("/")
     def jobFolder = ""
     if (pos != -1) {
-        jobFolder = pathInRepo.substring(0, pos).replaceFirst(~/pipelines\//, '')
+        jobFolder = pathInRepo.substring(0, pos).replaceFirst(rootFolder + "/", '')
     }
-//    def jobFolder = it.getParentFile().getAbsolutePath().replaceAll("\\\\", "/").replaceFirst(~/.+pipelines\//, '') // jenkins-folders
     splitter(jobFolder).each {
-        if (it != "pipelines")
+        if (it != rootFolder)
             folder(it)
     }
     String jobNameWithFolder
-    if (jobFolder == "pipelines") {
+    if (jobFolder == rootFolder) {
         jobNameWithFolder = jobname
     } else {
         jobNameWithFolder = jobFolder + "/" + jobname
